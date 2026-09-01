@@ -3,6 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    (function () {
+      try {
+        var s = localStorage.getItem("dm-labs-theme");
+        var t = (s === "light" || s === "dark") ? s :
+          (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    })();
+  </script>
   <title>Normalizar nomes de ficheiros · Daniel Marcos Labs</title>
   <meta name="description" content="Pré-visualiza nomes de ficheiros slugificados no browser. Não envia conteúdo." />
   <style>
@@ -15,7 +27,47 @@
       --card: #121A2B;
       --line: rgba(232, 238, 247, 0.08);
       --ok: #6FCF97;
+      --input: #0B1220;
+      --gutter-bg: #0E1628;
     }
+    html { color-scheme: dark; }
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg: #F6F3EC;
+      --text: #1A2233;
+      --muted: #5C6B80;
+      --card: #FFFFFF;
+      --line: rgba(0, 0, 0, 0.08);
+      --input: #FFFFFF;
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+      --gutter-bg: #EEEAE0;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .theme-toggle {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      width: 2.4rem;
+      height: 2.4rem;
+      padding: 0;
+      font-size: 1.1rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+    select, textarea, input[type="text"], input[type="date"], input[type="search"] {
+      background: var(--input);
+      color: var(--text);
+    }
+
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body {
@@ -55,7 +107,7 @@
     .hint { color: var(--muted); font-weight: 400; font-size: 0.88rem; }
     textarea, input[type="text"] {
       width: 100%;
-      background: #0B1220;
+      background: var(--input);
       color: var(--text);
       border: 1px solid var(--line);
       border-radius: 10px;
@@ -102,7 +154,10 @@
 <body>
   <header class="site-header">
     <a class="brand" href="https://danielpro.dev">Daniel Marcos <span>· Labs</span></a>
-    <span class="tag">Nomes de ficheiros</span>
+    <div class="header-right">
+      <span class="tag">Nomes de ficheiros</span>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Modo claro"></button>
+    </div>
   </header>
   <main>
     <h1>Normalizar nomes de ficheiros</h1>
@@ -220,6 +275,25 @@
       }
     });
     preview();
+    (function () {
+      var KEY = "dm-labs-theme";
+      var btn = document.getElementById("theme-toggle");
+      if (!btn) return;
+      var SUN = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+      var MOON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 14.5A8.5 8.5 0 1 1 9.5 3 7 7 0 0 0 21 14.5z"/></svg>';
+      function paint() {
+        var t = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+        btn.innerHTML = t === "dark" ? SUN : MOON;
+        btn.setAttribute("aria-label", t === "dark" ? "Modo claro" : "Modo escuro");
+      }
+      paint();
+      btn.addEventListener("click", function () {
+        var next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", next);
+        try { localStorage.setItem(KEY, next); } catch (e) {}
+        paint();
+      });
+    })();
   </script>
 </body>
 </html>
