@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Normalizar nomes de ficheiros · Daniel Marcos Labs</title>
+  <meta name="description" content="Pré-visualiza nomes de ficheiros slugificados no browser. Não envia conteúdo." />
+  <style>
+    :root {
+      --bg: #0B1220;
+      --text: #E8EEF7;
+      --muted: #9AA8BC;
+      --accent: #D4AF37;
+      --accent-dim: rgba(212, 175, 55, 0.16);
+      --card: #121A2B;
+      --line: rgba(232, 238, 247, 0.08);
+      --ok: #6FCF97;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .site-header, .site-footer { padding: 1rem 1.25rem; }
+    .site-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(212,175,55,0.06), transparent);
+    }
+    .brand { font-weight: 700; color: var(--text); text-decoration: none; }
+    .brand:hover { color: var(--accent); text-decoration: none; }
+    .brand span { color: var(--accent); }
+    .tag { color: var(--muted); font-size: 0.85rem; }
+    main { width: min(880px, calc(100% - 2rem)); margin: 1.25rem auto 2rem; flex: 1; }
+    h1 { font-size: 1.5rem; margin: 0 0 0.35rem; }
+    .lead { color: var(--muted); margin: 0 0 1rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1rem;
+      margin-bottom: 0.85rem;
+    }
+    label { display: block; font-weight: 600; margin: 0 0 0.4rem; }
+    .hint { color: var(--muted); font-weight: 400; font-size: 0.88rem; }
+    textarea, input[type="text"] {
+      width: 100%;
+      background: #0B1220;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.7rem 0.85rem;
+      font: 0.92rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      outline: none;
+    }
+    textarea { min-height: 9rem; resize: vertical; }
+    textarea:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .row { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: end; margin-top: 0.75rem; }
+    @media (max-width: 700px) {
+      .row { grid-template-columns: 1fr; }
+      .site-header { flex-direction: column; }
+    }
+    button {
+      font: inherit;
+      cursor: pointer;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      padding: 0.65rem 0.95rem;
+      background: transparent;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .btn-gold { background: var(--accent); color: #0B1220; border-color: transparent; }
+    .btn-gold:hover { filter: brightness(1.08); }
+    button:hover { border-color: var(--accent); }
+    input[type="file"] { color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    th, td { text-align: left; padding: 0.55rem 0.4rem; border-bottom: 1px solid var(--line); word-break: break-all; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    td.new { color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .same { color: var(--ok); font-size: 0.8rem; }
+    .empty { color: var(--muted); text-align: center; padding: 1.2rem; }
+    .toast { color: var(--ok); font-size: 0.88rem; min-height: 1.2em; margin-top: 0.4rem; }
+    .site-footer {
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.88rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="https://danielpro.dev">Daniel Marcos <span>· Labs</span></a>
+    <span class="tag">Nomes de ficheiros</span>
+  </header>
+  <main>
+    <h1>Normalizar nomes de ficheiros</h1>
+    <p class="lead">Pré-visualiza nomes limpos: espaços → underscores, minúsculas, sem acentos. Podes colar uma lista ou escolher ficheiros — <strong>só lemos o nome</strong>, o conteúdo nunca é enviado.</p>
+    <div class="card">
+      <label for="raw">Lista de nomes <span class="hint">(um por linha)</span></label>
+      <textarea id="raw" placeholder="Relatório Final.pdf&#10;Foto da Praia 02.JPG&#10;notas reunião.docx"></textarea>
+      <div class="row">
+        <div>
+          <label for="prefix">Prefixo opcional</label>
+          <input type="text" id="prefix" placeholder="ex. 2026_" maxlength="80" />
+        </div>
+        <div>
+          <label for="picker">Escolher ficheiros</label>
+          <input type="file" id="picker" multiple />
+        </div>
+        <button class="btn-gold" type="button" id="copy">Copiar nomes novos</button>
+      </div>
+      <p class="toast" id="toast" role="status"></p>
+    </div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Original</th><th>Novo</th></tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td class="empty" colspan="2">Cola nomes ou escolhe ficheiros para ver a pré-visualização.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+  <footer class="site-footer">
+    Projecto de Daniel Marcos · Portfólio: <a href="https://danielpro.dev">danielpro.dev</a> · Código: <a href="https://github.com/danielcodemoz/file-renamer-utility">este repositório no GitHub</a>
+  </footer>
+  <script>
+    function slugifyName(name, prefix) {
+      const i = name.lastIndexOf(".");
+      const hasDot = i > 0 && i < name.length - 1;
+      const stem = hasDot ? name.slice(0, i) : name;
+      const ext = hasDot ? name.slice(i) : "";
+      const clean = stem
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, "_")
+        .replace(/[^a-z0-9._-]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+      const p = (prefix || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return (p + (clean || "ficheiro") + ext.toLowerCase());
+    }
+    function lines() {
+      return document.getElementById("raw").value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    }
+    function preview() {
+      const prefix = document.getElementById("prefix").value;
+      const names = lines();
+      const tb = document.getElementById("tbody");
+      tb.innerHTML = "";
+      if (!names.length) {
+        tb.innerHTML = '<tr><td class="empty" colspan="2">Cola nomes ou escolhe ficheiros para ver a pré-visualização.</td></tr>';
+        return [];
+      }
+      const out = names.map(function (n) {
+        return { old: n, neu: slugifyName(n, prefix) };
+      });
+      out.forEach(function (row) {
+        const tr = document.createElement("tr");
+        const a = document.createElement("td");
+        a.textContent = row.old;
+        const b = document.createElement("td");
+        b.className = "new";
+        b.textContent = row.neu;
+        if (row.old === row.neu) {
+          const mark = document.createElement("span");
+          mark.className = "same";
+          mark.textContent = "  (igual)";
+          b.appendChild(mark);
+        }
+        tr.append(a, b);
+        tb.appendChild(tr);
+      });
+      return out;
+    }
+    document.getElementById("raw").addEventListener("input", preview);
+    document.getElementById("prefix").addEventListener("input", preview);
+    document.getElementById("picker").addEventListener("change", function (e) {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      const names = files.map(function (f) { return f.name; });
+      const ta = document.getElementById("raw");
+      const existing = ta.value.trim();
+      ta.value = (existing ? existing + "\n" : "") + names.join("\n");
+      e.target.value = "";
+      preview();
+    });
+    document.getElementById("copy").addEventListener("click", function () {
+      const out = preview();
+      const text = out.map(function (r) { return r.neu; }).join("\n");
+      const toast = document.getElementById("toast");
+      if (!text) { toast.textContent = "Não há nomes para copiar."; return; }
+      function ok() { toast.textContent = "Copiados " + out.length + " nomes."; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok).catch(function () {
+          const t = document.createElement("textarea");
+          t.value = text;
+          document.body.appendChild(t);
+          t.select();
+          document.execCommand("copy");
+          t.remove();
+          ok();
+        });
+      } else {
+        ok();
+      }
+    });
+    preview();
+  </script>
+</body>
+</html>
