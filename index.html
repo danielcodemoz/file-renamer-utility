@@ -14,7 +14,7 @@
     })();
   </script>
   <title>Normalizar nomes de ficheiros · Daniel Marcos Labs</title>
-  <meta name="description" content="Pré-visualiza nomes de ficheiros slugificados no browser. Não envia conteúdo." />
+  <meta name="description" content="Pré-visualiza nomes de ficheiros no browser: slugify, substituir, numerar, maiúsculas. Não envia conteúdo." />
   <style>
     :root {
       --bg: #0B1220;
@@ -25,12 +25,15 @@
       --card: #121A2B;
       --line: rgba(232, 238, 247, 0.08);
       --ok: #6FCF97;
+      --warn: #E8C547;
+      --danger: #E26D7A;
       --input: #0B1220;
       --gutter-bg: #0E1628;
       --on-accent: #0B1220;
       --header-wash: rgba(212, 175, 55, 0.06);
       --chip-bg: var(--accent-dim);
       --chip-border: var(--accent);
+      --shadow: none;
     }
     html { color-scheme: dark; }
     html[data-theme="light"] {
@@ -49,13 +52,36 @@
       --chip-border: #0F766E;
       --shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
       --gutter-bg: #F1F5F9;
-      --gutter: #64748B;
+      --ok: #15803D;
+      --warn: #B45309;
+      --danger: #DC2626;
     }
-    .header-right {
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .site-header, .site-footer { padding: 1rem 1.25rem; }
+    .site-header {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      justify-content: space-between;
+      gap: 1rem;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, var(--header-wash), transparent);
     }
+    .brand { font-weight: 700; color: var(--text); text-decoration: none; }
+    .brand:hover { color: var(--accent); text-decoration: none; }
+    .brand span { color: var(--accent); }
+    .header-right { display: flex; align-items: center; gap: 0.75rem; }
+    .tag { color: var(--muted); font-size: 0.85rem; }
     .theme-toggle {
       background: transparent;
       color: var(--text);
@@ -72,91 +98,165 @@
       flex-shrink: 0;
     }
     .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
-    select, textarea, input[type="text"], input[type="date"], input[type="search"] {
-      background: var(--input);
-      color: var(--text);
+    main { width: min(960px, calc(100% - 2rem)); margin: 1.25rem auto 2rem; flex: 1; }
+    h1 { font-size: 1.55rem; margin: 0 0 0.35rem; letter-spacing: -0.02em; }
+    .lead { color: var(--muted); margin: 0 0 1.1rem; line-height: 1.55; }
+    .privacy {
+      font-size: 0.88rem;
+      color: var(--muted);
+      background: var(--accent-dim);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      margin: 0 0 1rem;
     }
-
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .site-header, .site-footer { padding: 1rem 1.25rem; }
-    .site-header {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 1rem;
-      border-bottom: 1px solid var(--line);
-      background: linear-gradient(180deg, var(--header-wash), transparent);
-    }
-    .brand { font-weight: 700; color: var(--text); text-decoration: none; }
-    .brand:hover { color: var(--accent); text-decoration: none; }
-    .brand span { color: var(--accent); }
-    .tag { color: var(--muted); font-size: 0.85rem; }
-    main { width: min(880px, calc(100% - 2rem)); margin: 1.25rem auto 2rem; flex: 1; }
-    h1 { font-size: 1.5rem; margin: 0 0 0.35rem; }
-    .lead { color: var(--muted); margin: 0 0 1rem; }
     .card {
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 14px;
-      padding: 1rem;
-      margin-bottom: 0.85rem;
+      padding: 1.05rem 1.1rem;
+      margin-bottom: 0.9rem;
+      box-shadow: var(--shadow);
     }
-    label { display: block; font-weight: 600; margin: 0 0 0.4rem; }
-    .hint { color: var(--muted); font-weight: 400; font-size: 0.88rem; }
-    textarea, input[type="text"] {
+    .card h2 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin: 0 0 0.75rem;
+      font-weight: 700;
+    }
+    label { display: block; font-weight: 600; margin: 0 0 0.35rem; font-size: 0.92rem; }
+    .hint { color: var(--muted); font-weight: 400; font-size: 0.85rem; }
+    textarea, input[type="text"], input[type="number"], select {
       width: 100%;
       background: var(--input);
       color: var(--text);
       border: 1px solid var(--line);
       border-radius: 10px;
-      padding: 0.7rem 0.85rem;
+      padding: 0.65rem 0.8rem;
       font: 0.92rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       outline: none;
     }
-    textarea { min-height: 9rem; resize: vertical; }
-    textarea:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
-    .row { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: end; margin-top: 0.75rem; }
-    @media (max-width: 700px) {
-      .row { grid-template-columns: 1fr; }
-      .site-header { flex-direction: column; }
+    select { font-family: inherit; font-weight: 600; }
+    textarea { min-height: 8.5rem; resize: vertical; font-size: 0.9rem; }
+    textarea:focus, input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
     }
+    .file-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      align-items: center;
+      margin-top: 0.75rem;
+    }
+    input[type="file"] { color: var(--muted); font-size: 0.85rem; }
     button {
       font: inherit;
       cursor: pointer;
       border-radius: 10px;
       border: 1px solid var(--line);
-      padding: 0.65rem 0.95rem;
+      padding: 0.6rem 0.95rem;
       background: transparent;
       color: var(--text);
       font-weight: 600;
     }
+    button:hover { border-color: var(--accent); }
     .btn-gold { background: var(--accent); color: var(--on-accent); border-color: transparent; }
     .btn-gold:hover { filter: brightness(1.08); }
-    button:hover { border-color: var(--accent); }
-    input[type="file"] { color: var(--muted); }
+    .btn-ghost { background: var(--gutter-bg); }
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.7rem;
+    }
+    .opt {
+      background: var(--gutter-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.7rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      min-width: 0;
+    }
+    .opt.span-2 { grid-column: span 2; }
+    @media (max-width: 700px) {
+      .opt.span-2 { grid-column: span 1; }
+      .site-header { flex-direction: column; align-items: flex-start; }
+    }
+    .opt-k {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .check input { width: 1.05rem; height: 1.05rem; accent-color: var(--accent); }
+    .find-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+    .num-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.28rem 0.7rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: var(--card);
+    }
+    .pill.change { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+    .pill.same { color: var(--ok); }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.35rem; }
+    .toast { color: var(--ok); font-size: 0.88rem; min-height: 1.2em; margin: 0.35rem 0 0; }
     table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-    th, td { text-align: left; padding: 0.55rem 0.4rem; border-bottom: 1px solid var(--line); word-break: break-all; }
-    th { color: var(--muted); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    th, td { text-align: left; padding: 0.55rem 0.45rem; border-bottom: 1px solid var(--line); word-break: break-all; vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
     td.new { color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .same { color: var(--ok); font-size: 0.8rem; }
-    .empty { color: var(--muted); text-align: center; padding: 1.2rem; }
-    .toast { color: var(--ok); font-size: 0.88rem; min-height: 1.2em; margin-top: 0.4rem; }
+    td.orig { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88rem; }
+    .st {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.18rem 0.5rem;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .st-change { background: var(--accent-dim); color: var(--accent); }
+    .st-same { background: rgba(111, 207, 151, 0.15); color: var(--ok); }
+    .st-dup { background: rgba(226, 109, 122, 0.14); color: var(--danger); }
+    .empty-box {
+      text-align: center;
+      padding: 1.8rem 1rem;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+    }
+    .empty-box strong { display: block; color: var(--text); margin-bottom: 0.35rem; font-size: 1.05rem; }
     .site-footer {
       border-top: 1px solid var(--line);
       color: var(--muted);
       font-size: 0.88rem;
       text-align: center;
+    }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
   </style>
 </head>
@@ -170,44 +270,110 @@
   </header>
   <main>
     <h1>Normalizar nomes de ficheiros</h1>
-    <p class="lead">Pré-visualiza nomes limpos: espaços → underscores, minúsculas, sem acentos. Podes colar uma lista ou escolher ficheiros — <strong>só lemos o nome</strong>, o conteúdo nunca é enviado.</p>
+    <p class="lead">Combina regras e vê o resultado antes de copiar. Cola uma lista ou escolhe ficheiros — o conteúdo nunca sai deste browser.</p>
+    <p class="privacy">Privacidade: <strong>nunca enviamos os bytes dos ficheiros</strong>. O selector de ficheiros só lê o nome. Nada é carregado para um servidor.</p>
+
     <div class="card">
-      <label for="raw">Lista de nomes <span class="hint">(um por linha)</span></label>
+      <h2>Lista</h2>
+      <label for="raw">Nomes <span class="hint">(um por linha)</span></label>
       <textarea id="raw" placeholder="Relatório Final.pdf&#10;Foto da Praia 02.JPG&#10;notas reunião.docx"></textarea>
-      <div class="row">
-        <div>
-          <label for="prefix">Prefixo opcional</label>
+      <div class="file-row">
+        <label for="picker" class="hint" style="margin:0">Escolher ficheiros</label>
+        <input type="file" id="picker" multiple />
+        <button type="button" class="btn-ghost" id="examples">Preencher exemplos</button>
+        <button type="button" class="btn-ghost" id="clear">Limpar lista</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Regras (combináveis)</h2>
+      <div class="toolbar">
+        <div class="opt">
+          <span class="opt-k">Slugify</span>
+          <label class="check"><input type="checkbox" id="opt-slugify" checked /> Minúsculas, sem acentos, espaços → _</label>
+        </div>
+        <div class="opt span-2">
+          <span class="opt-k">Procurar / substituir</span>
+          <label class="check"><input type="checkbox" id="opt-find" /> Activar substituição literal</label>
+          <div class="find-row">
+            <input type="text" id="find" placeholder="procurar" maxlength="120" />
+            <input type="text" id="replace" placeholder="substituir por" maxlength="120" />
+          </div>
+        </div>
+        <div class="opt">
+          <span class="opt-k">Numeração</span>
+          <label class="check"><input type="checkbox" id="opt-num" /> Prefixar 001, 002…</label>
+          <div class="num-row">
+            <div>
+              <label for="num-start" class="hint">Início</label>
+              <input type="number" id="num-start" value="1" min="0" max="9999" />
+            </div>
+            <div>
+              <label for="num-pad" class="hint">Largura</label>
+              <input type="number" id="num-pad" value="3" min="1" max="6" />
+            </div>
+          </div>
+        </div>
+        <div class="opt">
+          <span class="opt-k">Maiúsculas / minúsculas</span>
+          <select id="case">
+            <option value="nenhum">Não alterar</option>
+            <option value="minusculas">minúsculas</option>
+            <option value="maiusculas">MAIÚSCULAS</option>
+            <option value="titulo">Título</option>
+          </select>
+          <span class="hint">Aplica-se depois do slugify</span>
+        </div>
+        <div class="opt">
+          <span class="opt-k">Prefixo</span>
           <input type="text" id="prefix" placeholder="ex. 2026_" maxlength="80" />
         </div>
-        <div>
-          <label for="picker">Escolher ficheiros</label>
-          <input type="file" id="picker" multiple />
+        <div class="opt">
+          <span class="opt-k">Sufixo</span>
+          <input type="text" id="suffix" placeholder="ex. _v1" maxlength="80" />
         </div>
+        <div class="opt">
+          <span class="opt-k">Extensão</span>
+          <select id="ext-mode">
+            <option value="lower">Forçar minúsculas (.jpg)</option>
+            <option value="keep">Manter original (.JPG)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Pré-visualização</h2>
+      <div class="stats" id="stats" hidden></div>
+      <div class="actions">
         <button class="btn-gold" type="button" id="copy">Copiar nomes novos</button>
+        <button type="button" id="download">Descarregar mapeamento TSV</button>
       </div>
       <p class="toast" id="toast" role="status"></p>
-    </div>
-    <div class="card">
       <table>
         <thead>
-          <tr><th>Original</th><th>Novo</th></tr>
+          <tr><th>Original</th><th>Novo</th><th>Estado</th></tr>
         </thead>
-        <tbody id="tbody">
-          <tr><td class="empty" colspan="2">Cola nomes ou escolhe ficheiros para ver a pré-visualização.</td></tr>
-        </tbody>
+        <tbody id="tbody"></tbody>
       </table>
     </div>
   </main>
   <footer class="site-footer">
-    Projecto de Daniel Marcos · Portfólio: <a href="https://danielpro.dev">danielpro.dev</a> · Código: <a href="https://github.com/danielcodemoz/file-renamer-utility">este repositório no GitHub</a>
+    Projecto de Daniel Marcos · Maputo · Laboratório, não um produto de cliente ·
+    Portfólio: <a href="https://danielpro.dev">danielpro.dev</a> ·
+    Código: <a href="https://github.com/danielcodemoz/file-renamer-utility">este repositório no GitHub</a>
   </footer>
   <script>
-    function slugifyName(name, prefix) {
-      const i = name.lastIndexOf(".");
-      const hasDot = i > 0 && i < name.length - 1;
-      const stem = hasDot ? name.slice(0, i) : name;
-      const ext = hasDot ? name.slice(i) : "";
-      const clean = stem
+    var SAMPLE = [
+      "Relatório Final.pdf",
+      "Foto da Praia 02.JPG",
+      "notas reunião.docx",
+      "Contrato 2024 (assinado).PDF",
+      "mapa-Beira 2023.PNG"
+    ].join("\n");
+
+    function slugifyStem(stem) {
+      var clean = stem
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
@@ -215,73 +381,172 @@
         .replace(/[^a-z0-9._-]/g, "_")
         .replace(/_+/g, "_")
         .replace(/^_+|_+$/g, "");
-      const p = (prefix || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      return (p + (clean || "ficheiro") + ext.toLowerCase());
+      return clean || "ficheiro";
+    }
+    function titleCase(s) {
+      return s.replace(/[^\s._-]+/g, function (w) {
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      });
+    }
+    function splitName(name) {
+      var i = name.lastIndexOf(".");
+      var hasDot = i > 0 && i < name.length - 1;
+      return { stem: hasDot ? name.slice(0, i) : name, ext: hasDot ? name.slice(i) : "" };
+    }
+    function opts() {
+      return {
+        slugify: document.getElementById("opt-slugify").checked,
+        findOn: document.getElementById("opt-find").checked,
+        find: document.getElementById("find").value,
+        replace: document.getElementById("replace").value,
+        numbering: document.getElementById("opt-num").checked,
+        start: parseInt(document.getElementById("num-start").value, 10),
+        pad: parseInt(document.getElementById("num-pad").value, 10),
+        caso: document.getElementById("case").value,
+        prefix: document.getElementById("prefix").value || "",
+        suffix: document.getElementById("suffix").value || "",
+        lowerExt: document.getElementById("ext-mode").value === "lower"
+      };
+    }
+    function applyName(name, o, index) {
+      var work = name;
+      if (o.findOn && o.find) work = work.split(o.find).join(o.replace);
+      var parts = splitName(work);
+      var stem = parts.stem;
+      var ext = parts.ext;
+      if (o.slugify) stem = slugifyStem(stem);
+      if (o.caso === "minusculas") stem = stem.toLowerCase();
+      else if (o.caso === "maiusculas") stem = stem.toUpperCase();
+      else if (o.caso === "titulo") stem = titleCase(stem);
+      var start = isFinite(o.start) ? o.start : 1;
+      var pad = isFinite(o.pad) && o.pad > 0 ? o.pad : 3;
+      var num = "";
+      if (o.numbering) {
+        var n = String(start + index);
+        while (n.length < pad) n = "0" + n;
+        num = n + "_";
+      }
+      if (o.lowerExt) ext = ext.toLowerCase();
+      return o.prefix + num + stem + o.suffix + ext;
     }
     function lines() {
       return document.getElementById("raw").value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
     }
     function preview() {
-      const prefix = document.getElementById("prefix").value;
-      const names = lines();
-      const tb = document.getElementById("tbody");
+      var o = opts();
+      var names = lines();
+      var tb = document.getElementById("tbody");
+      var stats = document.getElementById("stats");
       tb.innerHTML = "";
       if (!names.length) {
-        tb.innerHTML = '<tr><td class="empty" colspan="2">Cola nomes ou escolhe ficheiros para ver a pré-visualização.</td></tr>';
+        stats.hidden = true;
+        tb.innerHTML = '<tr><td colspan="3"><div class="empty-box"><strong>Nenhum nome ainda</strong>Cola uma lista, escolhe ficheiros ou carrega em «Preencher exemplos».</div></td></tr>';
         return [];
       }
-      const out = names.map(function (n) {
-        return { old: n, neu: slugifyName(n, prefix) };
+      var out = names.map(function (n, i) {
+        return { old: n, neu: applyName(n, o, i) };
       });
+      var counts = {};
       out.forEach(function (row) {
-        const tr = document.createElement("tr");
-        const a = document.createElement("td");
+        counts[row.neu] = (counts[row.neu] || 0) + 1;
+      });
+      var changed = 0;
+      out.forEach(function (row) {
+        var tr = document.createElement("tr");
+        var a = document.createElement("td");
+        a.className = "orig";
         a.textContent = row.old;
-        const b = document.createElement("td");
+        var b = document.createElement("td");
         b.className = "new";
         b.textContent = row.neu;
-        if (row.old === row.neu) {
-          const mark = document.createElement("span");
-          mark.className = "same";
-          mark.textContent = "  (igual)";
-          b.appendChild(mark);
+        var c = document.createElement("td");
+        var st = document.createElement("span");
+        var dup = counts[row.neu] > 1;
+        if (dup) {
+          st.className = "st st-dup";
+          st.textContent = "Duplicado";
+        } else if (row.old === row.neu) {
+          st.className = "st st-same";
+          st.textContent = "Igual";
+        } else {
+          st.className = "st st-change";
+          st.textContent = "Altera";
         }
-        tr.append(a, b);
+        if (row.old !== row.neu) changed += 1;
+        c.appendChild(st);
+        tr.append(a, b, c);
         tb.appendChild(tr);
       });
+      stats.hidden = false;
+      stats.innerHTML =
+        '<span class="pill">' + out.length + ' ficheiro' + (out.length === 1 ? "" : "s") + "</span>" +
+        '<span class="pill change">' + changed + " a alterar</span>" +
+        '<span class="pill same">' + (out.length - changed) + " iguais</span>";
       return out;
     }
-    document.getElementById("raw").addEventListener("input", preview);
-    document.getElementById("prefix").addEventListener("input", preview);
+    function fallbackCopy(text) {
+      var t = document.createElement("textarea");
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand("copy");
+      t.remove();
+    }
+    function copyText(text, okMsg) {
+      var toast = document.getElementById("toast");
+      function ok() { toast.textContent = okMsg; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok).catch(function () { fallbackCopy(text); ok(); });
+      } else {
+        fallbackCopy(text);
+        ok();
+      }
+    }
+    ["raw","prefix","suffix","find","replace","case","ext-mode","num-start","num-pad"].forEach(function (id) {
+      document.getElementById(id).addEventListener("input", preview);
+      document.getElementById(id).addEventListener("change", preview);
+    });
+    ["opt-slugify","opt-find","opt-num"].forEach(function (id) {
+      document.getElementById(id).addEventListener("change", preview);
+    });
     document.getElementById("picker").addEventListener("change", function (e) {
-      const files = Array.from(e.target.files || []);
+      var files = Array.from(e.target.files || []);
       if (!files.length) return;
-      const names = files.map(function (f) { return f.name; });
-      const ta = document.getElementById("raw");
-      const existing = ta.value.trim();
+      var names = files.map(function (f) { return f.name; });
+      var ta = document.getElementById("raw");
+      var existing = ta.value.trim();
       ta.value = (existing ? existing + "\n" : "") + names.join("\n");
       e.target.value = "";
       preview();
     });
+    document.getElementById("examples").addEventListener("click", function () {
+      document.getElementById("raw").value = SAMPLE;
+      preview();
+    });
+    document.getElementById("clear").addEventListener("click", function () {
+      document.getElementById("raw").value = "";
+      document.getElementById("toast").textContent = "";
+      preview();
+    });
     document.getElementById("copy").addEventListener("click", function () {
-      const out = preview();
-      const text = out.map(function (r) { return r.neu; }).join("\n");
-      const toast = document.getElementById("toast");
-      if (!text) { toast.textContent = "Não há nomes para copiar."; return; }
-      function ok() { toast.textContent = "Copiados " + out.length + " nomes."; }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(ok).catch(function () {
-          const t = document.createElement("textarea");
-          t.value = text;
-          document.body.appendChild(t);
-          t.select();
-          document.execCommand("copy");
-          t.remove();
-          ok();
-        });
-      } else {
-        ok();
-      }
+      var out = preview();
+      var text = out.map(function (r) { return r.neu; }).join("\n");
+      if (!text) { document.getElementById("toast").textContent = "Não há nomes para copiar."; return; }
+      copyText(text, "Copiados " + out.length + " nomes novos.");
+    });
+    document.getElementById("download").addEventListener("click", function () {
+      var out = preview();
+      if (!out.length) { document.getElementById("toast").textContent = "Não há mapeamento para descarregar."; return; }
+      var tsv = "original\tnovo\n" + out.map(function (r) { return r.old + "\t" + r.neu; }).join("\n") + "\n";
+      var blob = new Blob([tsv], { type: "text/tab-separated-values;charset=utf-8" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "mapeamento-nomes.tsv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
+      document.getElementById("toast").textContent = "Descarregado mapeamento TSV (" + out.length + " linhas).";
     });
     preview();
     (function () {
