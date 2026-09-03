@@ -1,26 +1,32 @@
-# File Renamer Utility
+# Normalizar nomes de ficheiros
 
-Normaliza nomes de ficheiros em lote (espaços → underscores, minúsculas). A demo web só lê o nome — o conteúdo nunca é carregado nem enviado. O CLI Python (`file_renamer.py`) renomeia mesmo os ficheiros numa pasta.
+**Demo ao vivo:** [https://danielcodemoz.github.io/file-renamer-utility/](https://danielcodemoz.github.io/file-renamer-utility/)
 
-**Demo:** https://danielcodemoz.github.io/file-renamer-utility/
+Laboratório de Daniel Marcos (Maputo) — não é um produto de cliente. Pré-visualiza e aplica regras combináveis aos nomes de ficheiros: slugify, procurar/substituir, numeração `001`, `002`…, maiúsculas/minúsculas, prefixo, sufixo e extensão.
 
-## Stack
+## Ferramenta web
 
-- HTML, CSS e JavaScript (`index.html`)
-- Python 3 (`file_renamer.py`)
+Cola uma lista de nomes ou escolhe ficheiros no browser. **Só se lê o nome** — o conteúdo nunca é carregado nem enviado.
 
-## Correr localmente
+- Modos combináveis (barra de opções)
+- Contagem de ficheiros e de nomes que realmente mudam
+- Tabela original | novo | estado
+- Copiar nomes novos
+- Descarregar o mapeamento em TSV/txt (`original` + tab + `novo`)
+- Estado vazio e botão de exemplos
 
-Demo web — abre `index.html` no browser.
+## CLI (Python)
 
-CLI:
+O script `file_renamer.py` aplica as mesmas regras e **renomeia de verdade** os ficheiros duma pasta. Usa `--simular` para ver o mapeamento sem escrever.
 
 ```bash
-python file_renamer.py /caminho/para/pasta
+python file_renamer.py --help
+python file_renamer.py ./fotos --simular
+python file_renamer.py ./docs --prefixo 2026_ --numeracao --sufixo _v1
+python file_renamer.py ./docs --procurar " " --substituir _ --caso minusculas --manter-ext
 ```
 
-## Autor
+- Portfólio: [danielpro.dev](https://danielpro.dev)
+- Código: [github.com/danielcodemoz/file-renamer-utility](https://github.com/danielcodemoz/file-renamer-utility)
 
-Daniel Marcos — consultor de TI em Maputo. Lab público, não é produto de cliente.
-
-https://danielpro.dev
+Autor: Daniel Marcos, Maputo.
